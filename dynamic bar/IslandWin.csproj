@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- net6.0-windows10.0.19041.0: unlocks WinRT/GSMTC APIs natively without
+         any NuGet package. Microsoft.Windows.SDK.Contracts is NOT supported on
+         .NET 5+ (NETSDK1130/NETSDK1135). The Windows 10.0.19041 API surface is
+         the minimum version that includes GlobalSystemMediaTransportControls.
+         Same .NET 6.0 SDK; upgrade path: change 6.0 → 8.0 when SDK is available. -->
+    <TargetFramework>net6.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>IslandWin</AssemblyName>
+    <RootNamespace>IslandWin</RootNamespace>
+    <Description>Dynamic Island for Windows 11</Description>
+  </PropertyGroup>
+
+</Project>

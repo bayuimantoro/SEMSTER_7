@@ -1,0 +1,78 @@
+{
+  "version": 3,
+  "targets": {
+    "net6.0-windows10.0.19041": {}
+  },
+  "libraries": {},
+  "projectFileDependencyGroups": {
+    "net6.0-windows10.0.19041": []
+  },
+  "packageFolders": {
+    "C:\\Users\\bayui\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\bayui\\文档\\SEMSTER_7\\dynamic bar\\IslandWin.csproj",
+      "projectName": "IslandWin",
+      "projectPath": "C:\\Users\\bayui\\文档\\SEMSTER_7\\dynamic bar\\IslandWin.csproj",
+      "packagesPath": "C:\\Users\\bayui\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\bayui\\文档\\SEMSTER_7\\dynamic bar\\obj\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\bayui\\AppData\\Roaming\\NuGet\\NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net6.0-windows10.0.19041.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net6.0-windows10.0.19041": {
+          "targetAlias": "net6.0-windows10.0.19041.0",
+          "projectReferences": {}
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      }
+    },
+    "frameworks": {
+      "net6.0-windows10.0.19041": {
+        "targetAlias": "net6.0-windows10.0.19041.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.Windows.SDK.NET.Ref",
+            "version": "[10.0.19041.43, 10.0.19041.43]"
+          }
+        ],
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          },
+          "Microsoft.Windows.SDK.NET.Ref": {
+            "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App": {
+            "privateAssets": "none"
+          }
+        },
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.427\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

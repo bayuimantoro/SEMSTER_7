@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "n/acSlDcIK6Z4gfHYf407Hz8PoN/IwcrxXSX2g7ft8vRX6s5MFT2Ues0sYmAYQUe3li4bNHW17mtXJUAJ9COvw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\bayui\\文档\\SEMSTER_7\\dynamic bar\\IslandWin.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\bayui\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.19041.43\\microsoft.windows.sdk.net.ref.10.0.19041.43.nupkg.sha512"
+  ],
+  "logs": []
+}

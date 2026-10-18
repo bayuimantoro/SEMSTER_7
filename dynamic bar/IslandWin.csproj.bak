@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>IslandWin</AssemblyName>
+    <RootNamespace>IslandWin</RootNamespace>
+    <Description>Dynamic Island for Windows 11</Description>
+    <!-- ponytail: using net6.0 because only SDK 6.0 is installed;
+         upgrade path: install .NET 8 SDK, change TFM to net8.0-windows -->
+  </PropertyGroup>
+
+</Project>
