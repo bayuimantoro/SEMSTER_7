@@ -1,9 +1,11 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using IslandWin.Services;
 using IslandWin.Services.Lyrics;
@@ -18,15 +20,17 @@ public partial class IslandWindow : Window
     private readonly LrclibLyricsProvider _lyricsProvider;
     private readonly LyricsService _lyrics;
     private readonly DispatcherTimer _lyricsTimer;
+    private readonly DispatcherTimer _autoHideTimer;
     private SyncedLyrics? _currentLyrics;
     private int _lastActiveLyricIndex = -2;
+    private System.Windows.Media.Brush? _adaptiveBrush;
 
     // Dimensions & Animation parameters
-    private const double CompactWidth = 220;
-    private const double CompactHeight = 40;
-    private const double ExpandedWidth = 480;
-    private const double ExpandedHeight = 118;
-    private const double VerticalSlideDistance = 10.0;
+    private const double CompactWidth = 200;
+    private const double CompactHeight = 36;
+    private const double ExpandedWidth = 450;
+    private const double ExpandedHeight = 114;
+    private const double VerticalSlideDistance = 14.0;
     private static readonly Duration TransitionDuration = new(TimeSpan.FromMilliseconds(550));
     // GeometryEase: Smooth Quartic EaseInOut for pill morphing and position, giving a deliberate start and gentle finish.
     private static readonly IEasingFunction GeometryEase = new QuarticEase { EasingMode = EasingMode.EaseInOut };
@@ -43,6 +47,12 @@ public partial class IslandWindow : Window
         _clockTimer.Tick += (_, _) => ClockText.Text = DateTime.Now.ToString("HH:mm");
         _clockTimer.Start();
         ClockText.Text = DateTime.Now.ToString("HH:mm");
+
+        // Auto-Hide timer: hides window after 3 seconds of inactivity when not playing music
+        _autoHideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _autoHideTimer.Tick += OnAutoHideTick;
+        MouseEnter += OnWindowMouseEnter;
+        MouseLeave += OnWindowMouseLeave;
 
         // Stage 2 phase 1: media session detection + metadata display.
         _media = new MediaSessionService();
@@ -66,6 +76,45 @@ public partial class IslandWindow : Window
             UpdateActiveLyric();
             UpdatePlaybackProgress();
         };
+    }
+
+    private void OnWindowMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        _autoHideTimer.Stop();
+        if (Opacity < 1.0)
+        {
+            AnimateWindowOpacity(1.0, TimeSpan.FromMilliseconds(250), new CubicEase { EasingMode = EasingMode.EaseOut });
+        }
+    }
+
+    private void OnWindowMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (_media.Current.Status != PlaybackStatus.Playing)
+        {
+            _autoHideTimer.Start();
+        }
+    }
+
+    private void OnAutoHideTick(object? sender, EventArgs e)
+    {
+        _autoHideTimer.Stop();
+
+        if (_isExpanded)
+        {
+            Collapse();
+        }
+
+        // Animate Opacity to 0.01 so it hides visually but remains hit-testable at the top of the screen
+        AnimateWindowOpacity(0.01, TimeSpan.FromMilliseconds(300), new CubicEase { EasingMode = EasingMode.EaseIn });
+    }
+
+    private void AnimateWindowOpacity(double targetOpacity, TimeSpan duration, IEasingFunction easing)
+    {
+        var anim = new DoubleAnimation(targetOpacity, new Duration(duration))
+        {
+            EasingFunction = easing
+        };
+        BeginAnimation(OpacityProperty, anim, HandoffBehavior.SnapshotAndReplace);
     }
 
     /// <summary>
@@ -319,26 +368,114 @@ public partial class IslandWindow : Window
             ArtworkImage.Source = snap.Artwork;
             ArtworkImage.Visibility = Visibility.Visible;
             ArtworkPlaceholder.Visibility = Visibility.Collapsed;
+            UpdateAdaptiveColor(snap.Artwork);
         }
         else
         {
             ArtworkImage.Source = null;
             ArtworkImage.Visibility = Visibility.Collapsed;
             ArtworkPlaceholder.Visibility = Visibility.Visible;
+            UpdateAdaptiveColor(null);
         }
 
         ApplyStatus(snap.Status);
         ApplyControls(snap.Controls);
     }
 
+    private void UpdateAdaptiveColor(ImageSource? imageSource)
+    {
+        if (imageSource is BitmapSource bmp)
+        {
+            try
+            {
+                var color = ExtractDominantColor(bmp);
+                _adaptiveBrush = new SolidColorBrush(color);
+                _adaptiveBrush.Freeze();
+            }
+            catch
+            {
+                _adaptiveBrush = null;
+            }
+        }
+        else
+        {
+            _adaptiveBrush = null;
+        }
+
+        ApplyAdaptiveColor();
+    }
+
+    private void ApplyAdaptiveColor()
+    {
+        var accentBrush = _adaptiveBrush ?? (System.Windows.Media.Brush)FindResource("IslandAccent");
+        ProgressBarFill.Background = accentBrush;
+        ActiveLyricText.Foreground = _adaptiveBrush ?? (System.Windows.Media.Brush)FindResource("IslandForeground");
+    }
+
+    private static System.Windows.Media.Color ExtractDominantColor(BitmapSource bitmap)
+    {
+        // Sample down to a small thumbnail for efficiency
+        var thumbnail = new TransformedBitmap(bitmap, new ScaleTransform(32.0 / Math.Max(1, bitmap.PixelWidth), 32.0 / Math.Max(1, bitmap.PixelHeight)));
+        var formatConverted = new FormatConvertedBitmap(thumbnail, PixelFormats.Bgra32, null, 0);
+
+        int width = formatConverted.PixelWidth;
+        int height = formatConverted.PixelHeight;
+        int stride = width * 4;
+        byte[] pixels = new byte[stride * height];
+        formatConverted.CopyPixels(pixels, stride, 0);
+
+        long rSum = 0, gSum = 0, bSum = 0;
+        int count = 0;
+
+        for (int i = 0; i < pixels.Length; i += 4)
+        {
+            byte b = pixels[i];
+            byte g = pixels[i + 1];
+            byte r = pixels[i + 2];
+            byte a = pixels[i + 3];
+
+            if (a < 128) continue; // Skip mostly transparent pixels
+
+            // Skip excessively dark or washed-out pixels to find a vibrant accent
+            int max = Math.Max(r, Math.Max(g, b));
+            int min = Math.Min(r, Math.Min(g, b));
+            if (max < 40 || min > 225) continue;
+
+            rSum += r;
+            gSum += g;
+            bSum += b;
+            count++;
+        }
+
+        if (count == 0)
+        {
+            return System.Windows.Media.Color.FromRgb(0x30, 0xD1, 0x58);
+        }
+
+        byte finalR = (byte)Math.Clamp(rSum / count, 0, 255);
+        byte finalG = (byte)Math.Clamp(gSum / count, 0, 255);
+        byte finalB = (byte)Math.Clamp(bSum / count, 0, 255);
+
+        // Boost saturation/brightness slightly if too dark
+        int lum = (int)(0.299 * finalR + 0.587 * finalG + 0.114 * finalB);
+        if (lum < 70)
+        {
+            double scale = 110.0 / Math.Max(lum, 1);
+            finalR = (byte)Math.Clamp(finalR * scale, 0, 255);
+            finalG = (byte)Math.Clamp(finalG * scale, 0, 255);
+            finalB = (byte)Math.Clamp(finalB * scale, 0, 255);
+        }
+
+        return System.Windows.Media.Color.FromRgb(finalR, finalG, finalB);
+    }
+
     private void ApplyStatus(PlaybackStatus status)
     {
-        // Color-code the status dot: green = playing, amber = paused, dim = other.
+        // Color-code the status dot: adaptive accent / green = playing, amber = paused, dim = other.
         StatusDot.Fill = status switch
         {
-            PlaybackStatus.Playing => (System.Windows.Media.Brush)FindResource("IslandAccent"),
-            PlaybackStatus.Paused  => new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(0xE0, 0xA8, 0x00)),
+            PlaybackStatus.Playing => _adaptiveBrush ?? (System.Windows.Media.Brush)FindResource("IslandAccent"),
+            PlaybackStatus.Paused  => new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xE0, 0xA8, 0x00)),
             _                       => (System.Windows.Media.Brush)FindResource("IslandSubtle"),
         };
 
@@ -346,7 +483,21 @@ public partial class IslandWindow : Window
         // ▶ otherwise (so clicking plays). Keep the button enabled only when
         // the session reports the relevant control as supported — done in
         // ApplyControls — but still reflect the icon here regardless.
-        PlayPauseButton.Content = status == PlaybackStatus.Playing ? "⏸" : "▶";
+        // Segoe Fluent Icons / MDL2: E769 = Pause, E768 = Play.
+        PlayPauseButton.Content = status == PlaybackStatus.Playing ? "\uE769" : "\uE768";
+
+        if (status == PlaybackStatus.Playing)
+        {
+            _autoHideTimer.Stop();
+            if (Opacity < 1.0)
+            {
+                AnimateWindowOpacity(1.0, TimeSpan.FromMilliseconds(250), new CubicEase { EasingMode = EasingMode.EaseOut });
+            }
+        }
+        else
+        {
+            _autoHideTimer.Start();
+        }
     }
 
     /// <summary>
@@ -382,6 +533,17 @@ public partial class IslandWindow : Window
     {
         ApplyNoActivateStyle();
         CenterOnScreen();
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+    }
+
+    // Resolution / monitor changes: re-center on the new primary work area.
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
+        Dispatcher.BeginInvoke(new Action(CenterOnScreen));
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        CenterOnScreen();
     }
 
     /// <summary>
@@ -396,33 +558,28 @@ public partial class IslandWindow : Window
         NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, exStyle);
     }
 
+    private double GetDpiScale()
+    {
+        var source = PresentationSource.FromVisual(this);
+        if (source?.CompositionTarget != null)
+            return source.CompositionTarget.TransformToDevice.M11;
+        try { return VisualTreeHelper.GetDpi(this).DpiScaleX; }
+        catch { return 1.0; }
+    }
+
+    // Work area (not bounds) so a top-docked taskbar is respected; with auto-hide it equals the full screen.
+    private static System.Drawing.Rectangle PrimaryWorkArea =>
+        (System.Windows.Forms.Screen.PrimaryScreen ?? System.Windows.Forms.Screen.AllScreens[0]).WorkingArea;
+
     /// <summary>
     /// Computes the horizontal screen coordinate to keep the island centered at the top.
-    /// Accounts for system DPI scaling to avoid positioning jumps or drift.
+    /// Accounts for system DPI scaling and the work area's origin (non-zero on some multi-monitor layouts).
     /// </summary>
     private double GetScreenCenterLeft(double targetWidth)
     {
-        double dpiScale = 1.0;
-        var source = PresentationSource.FromVisual(this);
-        if (source?.CompositionTarget != null)
-        {
-            dpiScale = source.CompositionTarget.TransformToDevice.M11;
-        }
-        else
-        {
-            try
-            {
-                dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-            }
-            catch
-            {
-                dpiScale = 1.0;
-            }
-        }
-
-        var screen = System.Windows.Forms.Screen.PrimaryScreen ?? System.Windows.Forms.Screen.AllScreens[0];
-        double screenWidth = screen.WorkingArea.Width / dpiScale;
-        return (screenWidth - targetWidth) / 2.0;
+        double dpiScale = GetDpiScale();
+        var area = PrimaryWorkArea;
+        return area.Left / dpiScale + (area.Width / dpiScale - targetWidth) / 2.0;
     }
 
     /// <summary>
@@ -434,7 +591,7 @@ public partial class IslandWindow : Window
         Width = targetWidth;
         Height = _isExpanded ? ExpandedHeight : CompactHeight;
         Left = GetScreenCenterLeft(targetWidth);
-        Top = 8; // slight offset from top edge
+        Top = PrimaryWorkArea.Top / GetDpiScale() + 8; // slight offset from top edge
     }
 
     private void OnIslandClick(object sender, MouseButtonEventArgs e)
@@ -633,6 +790,7 @@ public partial class IslandWindow : Window
     {
         _clockTimer.Stop();
         _lyricsTimer.Stop();
+        _autoHideTimer.Stop();
         _lyrics.LyricsChanged -= OnLyricsChanged;
         _lyrics.Dispose();
         _lyricsProvider.Dispose();
@@ -640,6 +798,8 @@ public partial class IslandWindow : Window
         _media.PlaybackStatusChanged -= OnPlaybackStatusChanged;
         _media.TimelineChanged -= OnTimelineChanged;
         _media.Dispose();
+        // Static event: must unsubscribe or the window leaks.
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         base.OnClosed(e);
     }
 }

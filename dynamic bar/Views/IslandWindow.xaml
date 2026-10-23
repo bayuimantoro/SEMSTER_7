@@ -9,21 +9,22 @@
         ShowInTaskbar="False"
         ResizeMode="NoResize"
         SizeToContent="Manual"
-        Width="220" Height="40"
+        Width="200" Height="36"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        TextOptions.TextFormattingMode="Display"
         Loaded="OnLoaded"
         MouseLeftButtonDown="OnIslandClick">
 
     <!-- The pill: stretched to window boundaries so inner text length cannot change pill width -->
     <Border x:Name="PillBorder"
             Background="{StaticResource IslandBackground}"
-            CornerRadius="20"
-            Margin="4"
+            BorderBrush="{StaticResource IslandStroke}"
+            BorderThickness="1"
+            CornerRadius="18"
+            Margin="0"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             Cursor="Hand">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.5" Color="Black"/>
-        </Border.Effect>
 
         <Grid x:Name="ContentGrid" ClipToBounds="True">
             <!-- Compact content: clock + status dot with subtle vertical translate transform -->
@@ -43,7 +44,8 @@
                            Foreground="{StaticResource IslandForeground}"
                            FontSize="13"
                            FontWeight="SemiBold"
-                           FontFamily="Segoe UI"
+                           Typography.NumeralAlignment="Tabular"
+                           FontFamily="Segoe UI Variable Text, Segoe UI"
                            VerticalAlignment="Center"/>
             </StackPanel>
 
@@ -52,7 +54,7 @@
                   Opacity="0"
                   Visibility="Collapsed"
                   IsHitTestVisible="False"
-                  Margin="16,10"
+                  Margin="14,8,14,8"
                   RenderTransformOrigin="0.5,0.5">
                 <Grid.RenderTransform>
                     <TranslateTransform x:Name="ExpandedTransform" X="0" Y="0"/>
@@ -63,7 +65,7 @@
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <!-- Column 0: Media player (Artwork, Title, Subtitle, Controls) -->
-                    <ColumnDefinition Width="210"/>
+                    <ColumnDefinition Width="190"/>
                     <!-- Column 1: Subtle vertical separator -->
                     <ColumnDefinition Width="1"/>
                     <!-- Column 2: Lyrics panel (Active line + Next line) with constrained width -->
@@ -71,7 +73,9 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Column 0: Media Player -->
-                <Grid Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">
+                <Grid x:Name="MediaColumn"
+                      Grid.Row="0" Grid.Column="0"
+                      VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <!-- Artwork -->
                         <ColumnDefinition Width="Auto"/>
@@ -82,7 +86,7 @@
                     <!-- Album art: shows artwork when available, falls back to ♫ -->
                     <Border x:Name="ArtworkBorder"
                             Grid.Column="0"
-                            Width="54" Height="54"
+                            Width="48" Height="48"
                             CornerRadius="10"
                             Background="#262626"
                             Margin="0,0,10,0"
@@ -90,7 +94,7 @@
                         <Grid>
                             <!-- Fallback note glyph, hidden when artwork is shown -->
                             <TextBlock x:Name="ArtworkPlaceholder"
-                                       Text="♫" FontSize="26"
+                                       Text="♫" FontSize="22"
                                        Foreground="{StaticResource IslandSubtle}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
@@ -99,7 +103,7 @@
                                    Stretch="UniformToFill"
                                    Visibility="Collapsed">
                                 <Image.Clip>
-                                    <RectangleGeometry Rect="0,0,54,54" RadiusX="10" RadiusY="10"/>
+                                    <RectangleGeometry Rect="0,0,48,48" RadiusX="10" RadiusY="10"/>
                                 </Image.Clip>
                             </Image>
                         </Grid>
@@ -119,7 +123,7 @@
                                    Text="No media playing"
                                    Foreground="{StaticResource IslandForeground}"
                                    FontSize="13" FontWeight="SemiBold"
-                                   FontFamily="Segoe UI"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI"
                                    TextTrimming="CharacterEllipsis"
                                    VerticalAlignment="Center"/>
 
@@ -127,46 +131,48 @@
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center"
-                                    Margin="0,2,0,4">
+                                    Margin="0,1,0,2">
                             <!-- Playback status indicator dot -->
                             <Ellipse x:Name="StatusDot"
                                      Width="6" Height="6"
-                                     Fill="{StaticResource IslandSubtle}"
+                                     Fill="{StaticResource IslandAccent}"
                                      Margin="0,0,5,0"
                                      VerticalAlignment="Center"/>
                             <TextBlock x:Name="SubtitleText"
                                        Text="Ready"
                                        Foreground="{StaticResource IslandSubtle}"
                                        FontSize="11"
-                                       FontFamily="Segoe UI"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI"
                                        TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
 
-                        <!-- Controls row -->
-                        <StackPanel Grid.Row="2"
+                        <!-- Controls row: Segoe Fluent Icons (Win11) with MDL2 fallback -->
+                        <StackPanel x:Name="MediaControlsPanel"
+                                    Grid.Row="2"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center"
                                     Margin="-4,0,0,0">
                             <Button x:Name="PrevButton"
                                     Style="{StaticResource IconButton}"
-                                    Content="⏮" FontSize="14"
+                                    Content="&#xE892;" FontSize="11"
+                                    Width="26" Height="22"
                                     Margin="0,0,2,0"
-                                    Padding="4,2"
                                     Click="OnPreviousClick"
                                     IsEnabled="False"
                                     ToolTip="Previous track"/>
                             <Button x:Name="PlayPauseButton"
                                     Style="{StaticResource IconButton}"
-                                    Content="▶" FontSize="16"
+                                    Content="&#xE768;" FontSize="14"
+                                    Width="26" Height="22"
                                     Margin="0,0,2,0"
-                                    Padding="6,2"
                                     Click="OnPlayPauseClick"
                                     IsEnabled="False"
                                     ToolTip="Play / Pause"/>
                             <Button x:Name="NextButton"
                                     Style="{StaticResource IconButton}"
-                                    Content="⏭" FontSize="14"
-                                    Padding="4,2"
+                                    Content="&#xE893;" FontSize="11"
+                                    Width="26" Height="22"
+                                    Margin="0,0,2,0"
                                     Click="OnNextClick"
                                     IsEnabled="False"
                                     ToolTip="Next track"/>
@@ -182,12 +188,12 @@
                            Margin="0,4,0,4"/>
 
                 <!-- Column 2: Lyrics Panel (Strictly bounded width, height, and fixed alignment) -->
-                <Grid x:Name="LyricsPanel" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="14,0,4,0">
+                <Grid x:Name="LyricsPanel" Grid.Row="0" Grid.Column="2" VerticalAlignment="Center" Margin="12,0,2,0">
                     <Grid.RowDefinitions>
-                        <!-- Active line row: fixed 36px (2 lines of 18px). Prevents 1-line vs 2-line vertical shifting. -->
-                        <RowDefinition Height="36"/>
-                        <!-- Next line row: fixed 30px (2 lines of 15px). -->
-                        <RowDefinition Height="30"/>
+                        <!-- Active line row: fixed 34px. Prevents 1-line vs 2-line vertical shifting. -->
+                        <RowDefinition Height="34"/>
+                        <!-- Next line row: fixed 26px. -->
+                        <RowDefinition Height="26"/>
                     </Grid.RowDefinitions>
 
                     <!-- Active line: emphasized with 2-line wrap and ellipsis fallback -->
@@ -195,13 +201,13 @@
                                Grid.Row="0"
                                Text=""
                                Foreground="{StaticResource IslandForeground}"
-                               FontSize="13"
+                               FontSize="12"
                                FontWeight="SemiBold"
-                               FontFamily="Segoe UI"
+                               FontFamily="Segoe UI Variable Text, Segoe UI"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="Wrap"
-                               MaxHeight="36"
-                               LineHeight="18"
+                               MaxHeight="34"
+                               LineHeight="17"
                                LineStackingStrategy="BlockLineHeight"
                                VerticalAlignment="Top"
                                TextOptions.TextFormattingMode="Display"/>
@@ -213,28 +219,40 @@
                                Foreground="{StaticResource IslandSubtle}"
                                FontSize="11"
                                FontWeight="Normal"
-                               FontFamily="Segoe UI"
+                               Opacity="0.8"
+                               FontFamily="Segoe UI Variable Text, Segoe UI"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="Wrap"
-                               MaxHeight="30"
-                               LineHeight="15"
+                               MaxHeight="26"
+                               LineHeight="13"
                                LineStackingStrategy="BlockLineHeight"
-                               Margin="0,4,0,0"
+                               Margin="0,2,0,0"
                                VerticalAlignment="Top"
                                TextOptions.TextFormattingMode="Display"/>
                 </Grid>
 
-                <!-- Row 1: Playback Progress Bar & Time Labels (Spans all columns) -->
-                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                <!-- Row 1: Playback timeline at the bottom: elapsed | bar | total (spans all columns) -->
+                <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,4,0,0"
+                      Typography.NumeralAlignment="Tabular">
+                    <Grid.ColumnDefinitions>
+                        <!-- Fixed widths so the bar length never shifts as the time text changes -->
+                        <ColumnDefinition Width="34"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="34"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Thin interactive progress bar track -->
+                    <TextBlock x:Name="PositionText"
+                               Grid.Column="0"
+                               Text="0:00"
+                               Foreground="{StaticResource IslandSubtle}"
+                               FontSize="10"
+                               HorizontalAlignment="Left"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Thin interactive progress bar track (taller transparent hit area) -->
                     <Grid x:Name="ProgressBarTrack"
-                          Grid.Row="0"
-                          Height="10"
+                          Grid.Column="1"
+                          Height="12"
                           Background="Transparent"
                           Cursor="Hand"
                           MouseLeftButtonDown="OnProgressBarMouseLeftButtonDown">
@@ -254,21 +272,13 @@
                                 Width="0"/>
                     </Grid>
 
-                    <!-- Time labels: Elapsed (left) & Total Duration (right) -->
-                    <Grid Grid.Row="1" Margin="0,2,0,0">
-                        <TextBlock x:Name="PositionText"
-                                   Text="0:00"
-                                   Foreground="{StaticResource IslandSubtle}"
-                                   FontSize="10"
-                                   FontFamily="Segoe UI"
-                                   HorizontalAlignment="Left"/>
-                        <TextBlock x:Name="DurationText"
-                                   Text="0:00"
-                                   Foreground="{StaticResource IslandSubtle}"
-                                   FontSize="10"
-                                   FontFamily="Segoe UI"
-                                   HorizontalAlignment="Right"/>
-                    </Grid>
+                    <TextBlock x:Name="DurationText"
+                               Grid.Column="2"
+                               Text="0:00"
+                               Foreground="{StaticResource IslandSubtle}"
+                               FontSize="10"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"/>
                 </Grid>
             </Grid>
         </Grid>

@@ -5,13 +5,14 @@
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <!-- Global styles -->
-        <SolidColorBrush x:Key="IslandBackground" Color="#1A1A1A"/>
-        <SolidColorBrush x:Key="IslandForeground" Color="#E0E0E0"/>
-        <SolidColorBrush x:Key="IslandAccent" Color="#3DDC84"/>
-        <SolidColorBrush x:Key="IslandSubtle" Color="#666666"/>
-        <SolidColorBrush x:Key="IslandHover" Color="#2A2A2A"/>
-        <SolidColorBrush x:Key="ProgressBackground" Color="#333333"/>
-        <SolidColorBrush x:Key="ProgressFill" Color="#3DDC84"/>
+        <SolidColorBrush x:Key="IslandBackground" Color="#0C0C0D"/>
+        <SolidColorBrush x:Key="IslandForeground" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="IslandAccent" Color="#30D158"/>
+        <SolidColorBrush x:Key="IslandSubtle" Color="#8E8E93"/>
+        <SolidColorBrush x:Key="IslandHover" Color="#2A2A2D"/>
+        <SolidColorBrush x:Key="IslandStroke" Color="#24FFFFFF"/>
+        <SolidColorBrush x:Key="ProgressBackground" Color="#3A3A3C"/>
+        <SolidColorBrush x:Key="ProgressFill" Color="#E5E5EA"/>
 
         <!-- Icon button style -->
         <Style x:Key="IconButton" TargetType="Button">
@@ -19,8 +20,9 @@
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{StaticResource IslandForeground}"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Symbol"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -35,6 +37,9 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.35"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
